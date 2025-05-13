@@ -226,3 +226,12 @@ resource allowHTTP 'Microsoft.Network/networkSecurityGroups/securityRules@2022-0
     destinationAddressPrefix: '*'
   }
 }
+resource subnetAssoc 'Microsoft.Network/virtualNetworks/subnets@2022-07-01' = {
+  name: '${vnet.name}/${vnet.properties.subnets[0].name}'
+  properties: {
+    addressPrefix: vnet.properties.subnets[0].properties.addressPrefix
+    networkSecurityGroup: {
+      id: nsg.id
+    }
+  }
+}
