@@ -184,4 +184,16 @@ resource kv 'Microsoft.KeyVault/vaults@2022-07-01' = {
     tenantId: subscription().tenantId
     sku: {
       family: 'A'
-      name
+      name: 'standard'
+    }
+  }
+}
+
+resource automation 'Microsoft.Automation/automationAccounts@2022-08-08' = {
+  name: 'bicep-automation'
+  location: location
+  properties: {}
+  sku: {
+    name: 'Basic'
+  }
+}
