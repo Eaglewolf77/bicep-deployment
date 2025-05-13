@@ -5,9 +5,7 @@ resource vnet 'Microsoft.Network/virtualNetworks@2022-07-01' = {
   location: location
   properties: {
     addressSpace: {
-      addressPrefixes: [
-        '10.0.0.0/16'
-      ]
+      addressPrefixes: ['10.0.0.0/16']
     }
     subnets: [
       {
@@ -26,7 +24,7 @@ resource nsg 'Microsoft.Network/networkSecurityGroups@2022-07-01' = {
   properties: {}
 }
 
-resource pip 'Microsoft.Network/publicIPAddresses@2022-07-01' = {
+resource jumpboxPip 'Microsoft.Network/publicIPAddresses@2022-07-01' = {
   name: 'bicep-jumpbox-ip'
   location: location
   properties: {
@@ -34,7 +32,7 @@ resource pip 'Microsoft.Network/publicIPAddresses@2022-07-01' = {
   }
 }
 
-resource nic 'Microsoft.Network/networkInterfaces@2022-07-01' = {
+resource jumpboxNic 'Microsoft.Network/networkInterfaces@2022-07-01' = {
   name: 'bicep-jumpbox-nic'
   location: location
   properties: {
@@ -47,7 +45,7 @@ resource nic 'Microsoft.Network/networkInterfaces@2022-07-01' = {
           }
           privateIPAllocationMethod: 'Dynamic'
           publicIPAddress: {
-            id: pip.id
+            id: jumpboxPip.id
           }
         }
       }
@@ -55,7 +53,7 @@ resource nic 'Microsoft.Network/networkInterfaces@2022-07-01' = {
   }
 }
 
-resource vm 'Microsoft.Compute/virtualMachines@2022-08-01' = {
+resource jumpboxVm 'Microsoft.Compute/virtualMachines@2022-08-01' = {
   name: 'bicep-jumpbox'
   location: location
   properties: {
@@ -83,7 +81,96 @@ resource vm 'Microsoft.Compute/virtualMachines@2022-08-01' = {
     networkProfile: {
       networkInterfaces: [
         {
-          id: nic.id
+          id: jumpboxNic.id
+        }
+      ]
+    }
+  }
+}
+
+resource webPip 'Microsoft.Network/publicIPAddresses@2022-07-01' = {
+  name: 'bicep-web-lb-ip'
+  location: location
+  sku: {
+    name: 'Standard'
+  }
+  properties: {
+    publicIPAllocationMethod: 'Static'
+  }
+}
+
+resource lb 'Microsoft.Network/loadBalancers@2022-07-01' = {
+  name: 'bicep-web-lb'
+  location: location
+  sku: {
+    name: 'Standard'
+  }
+  properties: {
+    frontendIPConfigurations: [
+      {
+        name: 'PublicIPAddress'
+        properties: {
+          publicIPAddress: {
+            id: webPip.id
+          }
+        }
+      }
+    ]
+  }
+}
+
+resource webNic 'Microsoft.Network/networkInterfaces@2022-07-01' = {
+  name: 'bicep-webserver-nic'
+  location: location
+  properties: {
+    ipConfigurations: [
+      {
+        name: 'ipconfig1'
+        properties: {
+          subnet: {
+            id: vnet.properties.subnets[0].id
+          }
+          privateIPAllocationMethod: 'Dynamic'
+          loadBalancerBackendAddressPools: [
+            {
+              id: lb.properties.backendAddressPools[0].id
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+
+resource webVm 'Microsoft.Compute/virtualMachines@2022-08-01' = {
+  name: 'bicep-webserver'
+  location: location
+  properties: {
+    hardwareProfile: {
+      vmSize: 'Standard_B2s'
+    }
+    storageProfile: {
+      imageReference: {
+        publisher: 'Canonical'
+        offer: 'UbuntuServer'
+        sku: '22_04-lts'
+        version: 'latest'
+      }
+      osDisk: {
+        createOption: 'FromImage'
+      }
+    }
+    osProfile: {
+      computerName: 'bicep-webserver'
+      adminUsername: 'azureuser'
+      linuxConfiguration: {
+        disablePasswordAuthentication: true
+      }
+    }
+    networkProfile: {
+      networkInterfaces: [
+        {
+          id: webNic.id
         }
       ]
     }
@@ -97,7 +184,4 @@ resource kv 'Microsoft.KeyVault/vaults@2022-07-01' = {
     tenantId: subscription().tenantId
     sku: {
       family: 'A'
-      name: 'standard'
-    }
-  }
-}
+      name
