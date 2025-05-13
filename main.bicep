@@ -1,4 +1,5 @@
 param location string = 'swedencentral'
+param sshPublicKey string
 
 resource vnet 'Microsoft.Network/virtualNetworks@2022-07-01' = {
   name: 'bicep-test-vnet'
@@ -22,6 +23,46 @@ resource nsg 'Microsoft.Network/networkSecurityGroups@2022-07-01' = {
   name: 'bicep-test-nsg'
   location: location
   properties: {}
+}
+
+resource allowSSH 'Microsoft.Network/networkSecurityGroups/securityRules@2022-07-01' = {
+  name: 'Allow-SSH'
+  parent: nsg
+  properties: {
+    priority: 1001
+    direction: 'Inbound'
+    access: 'Allow'
+    protocol: 'Tcp'
+    sourcePortRange: '*'
+    destinationPortRange: '22'
+    sourceAddressPrefix: '*'
+    destinationAddressPrefix: '*'
+  }
+}
+
+resource allowHTTP 'Microsoft.Network/networkSecurityGroups/securityRules@2022-07-01' = {
+  name: 'Allow-HTTP'
+  parent: nsg
+  properties: {
+    priority: 1002
+    direction: 'Inbound'
+    access: 'Allow'
+    protocol: 'Tcp'
+    sourcePortRange: '*'
+    destinationPortRange: '80'
+    sourceAddressPrefix: '*'
+    destinationAddressPrefix: '*'
+  }
+}
+
+resource subnetAssoc 'Microsoft.Network/virtualNetworks/subnets@2022-07-01' = {
+  name: '${vnet.name}/${vnet.properties.subnets[0].name}'
+  properties: {
+    addressPrefix: vnet.properties.subnets[0].properties.addressPrefix
+    networkSecurityGroup: {
+      id: nsg.id
+    }
+  }
 }
 
 resource jumpboxPip 'Microsoft.Network/publicIPAddresses@2022-07-01' = {
@@ -76,6 +117,14 @@ resource jumpboxVm 'Microsoft.Compute/virtualMachines@2022-08-01' = {
       adminUsername: 'azureuser'
       linuxConfiguration: {
         disablePasswordAuthentication: true
+        ssh: {
+          publicKeys: [
+            {
+              path: '/home/azureuser/.ssh/authorized_keys'
+              keyData: sshPublicKey
+            }
+          ]
+        }
       }
     }
     networkProfile: {
@@ -165,6 +214,14 @@ resource webVm 'Microsoft.Compute/virtualMachines@2022-08-01' = {
       adminUsername: 'azureuser'
       linuxConfiguration: {
         disablePasswordAuthentication: true
+        ssh: {
+          publicKeys: [
+            {
+              path: '/home/azureuser/.ssh/authorized_keys'
+              keyData: sshPublicKey
+            }
+          ]
+        }
       }
     }
     networkProfile: {
@@ -178,7 +235,7 @@ resource webVm 'Microsoft.Compute/virtualMachines@2022-08-01' = {
 }
 
 resource kv 'Microsoft.KeyVault/vaults@2022-07-01' = {
-  name: 'bicep-keyvault-test'
+  name: 'keyvault-kv-cloud23'
   location: location
   properties: {
     tenantId: subscription().tenantId
@@ -195,43 +252,5 @@ resource automation 'Microsoft.Automation/automationAccounts@2022-08-08' = {
   properties: {}
   sku: {
     name: 'Basic'
-  }
-}
-resource allowSSH 'Microsoft.Network/networkSecurityGroups/securityRules@2022-07-01' = {
-  name: 'Allow-SSH'
-  parent: nsg
-  properties: {
-    priority: 1001
-    direction: 'Inbound'
-    access: 'Allow'
-    protocol: 'Tcp'
-    sourcePortRange: '*'
-    destinationPortRange: '22'
-    sourceAddressPrefix: '*'
-    destinationAddressPrefix: '*'
-  }
-}
-
-resource allowHTTP 'Microsoft.Network/networkSecurityGroups/securityRules@2022-07-01' = {
-  name: 'Allow-HTTP'
-  parent: nsg
-  properties: {
-    priority: 1002
-    direction: 'Inbound'
-    access: 'Allow'
-    protocol: 'Tcp'
-    sourcePortRange: '*'
-    destinationPortRange: '80'
-    sourceAddressPrefix: '*'
-    destinationAddressPrefix: '*'
-  }
-}
-resource subnetAssoc 'Microsoft.Network/virtualNetworks/subnets@2022-07-01' = {
-  name: '${vnet.name}/${vnet.properties.subnets[0].name}'
-  properties: {
-    addressPrefix: vnet.properties.subnets[0].properties.addressPrefix
-    networkSecurityGroup: {
-      id: nsg.id
-    }
   }
 }
