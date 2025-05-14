@@ -1,9 +1,6 @@
 param location string = 'swedencentral'
 param sshPublicKey string
-
-resource rg 'Microsoft.Resources/resourceGroups@2021-04-01' existing = {
-  name: 'bicep-test-rg'
-}
+param adminUsername string = 'azureuser'
 
 resource vnet 'Microsoft.Network/virtualNetworks@2022-07-01' = {
   name: 'bicep-test-vnet'
@@ -59,7 +56,8 @@ resource allowHTTP 'Microsoft.Network/networkSecurityGroups/securityRules@2022-0
 }
 
 resource subnetAssoc 'Microsoft.Network/virtualNetworks/subnets@2022-07-01' = {
-  name: '${vnet.name}/bicep-test-subnet'
+  parent: vnet
+  name: 'bicep-test-subnet'
   properties: {
     addressPrefix: '10.0.1.0/24'
     networkSecurityGroup: {
@@ -71,11 +69,8 @@ resource subnetAssoc 'Microsoft.Network/virtualNetworks/subnets@2022-07-01' = {
 resource jumpboxPip 'Microsoft.Network/publicIPAddresses@2022-07-01' = {
   name: 'bicep-jumpbox-ip'
   location: location
-  sku: {
-    name: 'Standard'
-  }
   properties: {
-    publicIPAllocationMethod: 'Static'
+    publicIPAllocationMethod: 'Dynamic'
   }
 }
 
@@ -110,8 +105,8 @@ resource jumpboxVm 'Microsoft.Compute/virtualMachines@2022-08-01' = {
     storageProfile: {
       imageReference: {
         publisher: 'Canonical'
-        offer: '0001-com-ubuntu-server-focal'
-        sku: '20_04-lts-gen2'
+        offer: 'UbuntuServer'
+        sku: '22_04-lts'
         version: 'latest'
       }
       osDisk: {
@@ -120,13 +115,13 @@ resource jumpboxVm 'Microsoft.Compute/virtualMachines@2022-08-01' = {
     }
     osProfile: {
       computerName: 'bicep-jumpbox'
-      adminUsername: 'azureuser'
+      adminUsername: adminUsername
       linuxConfiguration: {
         disablePasswordAuthentication: true
         ssh: {
           publicKeys: [
             {
-              path: '/home/azureuser/.ssh/authorized_keys'
+              path: '/home/${adminUsername}/.ssh/authorized_keys'
               keyData: sshPublicKey
             }
           ]
@@ -171,11 +166,6 @@ resource lb 'Microsoft.Network/loadBalancers@2022-07-01' = {
         }
       }
     ]
-    backendAddressPools: [
-      {
-        name: 'BackendPool'
-      }
-    ]
   }
 }
 
@@ -191,6 +181,7 @@ resource webNic 'Microsoft.Network/networkInterfaces@2022-07-01' = {
             id: vnet.properties.subnets[0].id
           }
           privateIPAllocationMethod: 'Dynamic'
+          loadBalancerBackendAddressPools: []
         }
       }
     ]
@@ -207,8 +198,8 @@ resource webVm 'Microsoft.Compute/virtualMachines@2022-08-01' = {
     storageProfile: {
       imageReference: {
         publisher: 'Canonical'
-        offer: '0001-com-ubuntu-server-focal'
-        sku: '20_04-lts-gen2'
+        offer: 'UbuntuServer'
+        sku: '22_04-lts'
         version: 'latest'
       }
       osDisk: {
@@ -217,13 +208,13 @@ resource webVm 'Microsoft.Compute/virtualMachines@2022-08-01' = {
     }
     osProfile: {
       computerName: 'bicep-webserver'
-      adminUsername: 'azureuser'
+      adminUsername: adminUsername
       linuxConfiguration: {
         disablePasswordAuthentication: true
         ssh: {
           publicKeys: [
             {
-              path: '/home/azureuser/.ssh/authorized_keys'
+              path: '/home/${adminUsername}/.ssh/authorized_keys'
               keyData: sshPublicKey
             }
           ]
