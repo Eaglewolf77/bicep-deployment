@@ -23,6 +23,7 @@ resource vnet 'Microsoft.Network/virtualNetworks@2022-07-01' = {
 resource nsg 'Microsoft.Network/networkSecurityGroups@2022-07-01' = {
   name: 'bicep-test-nsg'
   location: location
+  properties: {}
 }
 
 resource allowSSH 'Microsoft.Network/networkSecurityGroups/securityRules@2022-07-01' = {
@@ -56,10 +57,9 @@ resource allowHTTP 'Microsoft.Network/networkSecurityGroups/securityRules@2022-0
 }
 
 resource subnetAssoc 'Microsoft.Network/virtualNetworks/subnets@2022-07-01' = {
-  parent: vnet
-  name: 'bicep-test-subnet'
+  name: '${vnet.name}/${vnet.properties.subnets[0].name}'
   properties: {
-    addressPrefix: '10.0.1.0/24'
+    addressPrefix: vnet.properties.subnets[0].properties.addressPrefix
     networkSecurityGroup: {
       id: nsg.id
     }
@@ -106,7 +106,7 @@ resource jumpboxVm 'Microsoft.Compute/virtualMachines@2022-08-01' = {
       imageReference: {
         publisher: 'Canonical'
         offer: 'UbuntuServer'
-        sku: '22_04-lts'
+        sku: '22_04-lts-gen2'
         version: 'latest'
       }
       osDisk: {
@@ -181,7 +181,11 @@ resource webNic 'Microsoft.Network/networkInterfaces@2022-07-01' = {
             id: vnet.properties.subnets[0].id
           }
           privateIPAllocationMethod: 'Dynamic'
-          loadBalancerBackendAddressPools: []
+          loadBalancerBackendAddressPools: [
+            {
+              id: lb.properties.backendAddressPools[0].id
+            }
+          ]
         }
       }
     ]
@@ -199,7 +203,7 @@ resource webVm 'Microsoft.Compute/virtualMachines@2022-08-01' = {
       imageReference: {
         publisher: 'Canonical'
         offer: 'UbuntuServer'
-        sku: '22_04-lts'
+        sku: '22_04-lts-gen2'
         version: 'latest'
       }
       osDisk: {
@@ -231,6 +235,7 @@ resource webVm 'Microsoft.Compute/virtualMachines@2022-08-01' = {
   }
 }
 
+// === Key Vault & SSH Secret Block ===
 resource kv 'Microsoft.KeyVault/vaults@2022-07-01' = {
   name: 'keyvault-bicep-cloud23'
   location: location
@@ -240,6 +245,14 @@ resource kv 'Microsoft.KeyVault/vaults@2022-07-01' = {
       family: 'A'
       name: 'standard'
     }
+  }
+}
+
+resource sshSecret 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
+  parent: kv
+  name: 'sshpublickey'
+  properties: {
+    value: sshPublicKey
   }
 }
 

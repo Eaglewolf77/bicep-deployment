@@ -15,6 +15,7 @@ jobs:
       AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
       AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
       AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      SSH_KEY: ${{ secrets.SSH_PUBLIC_KEY }}
     steps:
     - uses: actions/checkout@v4
 
@@ -30,11 +31,6 @@ jobs:
 
     - name: Start Timer
       run: echo "START_TIME=$(date +%s)" >> $GITHUB_ENV
-
-    - name: Get SSH public key from Key Vault
-      run: |
-        SSH_KEY=$(az keyvault secret show --name sshpublickey --vault-name keyvault-bicep-cloud23 --query value -o tsv)
-        echo "SSH_KEY=$SSH_KEY" >> $GITHUB_ENV
 
     - name: Deploy Bicep template
       run: |
