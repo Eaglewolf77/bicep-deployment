@@ -55,7 +55,6 @@ resource allowHTTP 'Microsoft.Network/networkSecurityGroups/securityRules@2022-0
   }
 }
 
-// ✅ FIX: Parent + hardcoded name to avoid BCP120
 resource subnetAssoc 'Microsoft.Network/virtualNetworks/subnets@2022-07-01' = {
   parent: vnet
   name: 'bicep-test-subnet'
@@ -107,7 +106,7 @@ resource jumpboxVm 'Microsoft.Compute/virtualMachines@2022-08-01' = {
       imageReference: {
         publisher: 'Canonical'
         offer: 'UbuntuServer'
-        sku: '22_04-lts-gen2'
+        sku: '22_04-lts'
         version: 'latest'
       }
       osDisk: {
@@ -204,7 +203,7 @@ resource webVm 'Microsoft.Compute/virtualMachines@2022-08-01' = {
       imageReference: {
         publisher: 'Canonical'
         offer: 'UbuntuServer'
-        sku: '22_04-lts-gen2'
+        sku: '22_04-lts'
         version: 'latest'
       }
       osDisk: {
@@ -261,7 +260,4 @@ resource automation 'Microsoft.Automation/automationAccounts@2022-08-08' = {
   name: 'bicep-automation'
   location: location
   properties: {}
-  sku: {
-    name: 'Basic'
-  }
 }
