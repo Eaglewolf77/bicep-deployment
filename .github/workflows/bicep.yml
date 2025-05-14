@@ -64,6 +64,3 @@ jobs:
 
       - name: Delete Resource Group
         run: az group delete --name bicep-test-rg --yes --no-wait
-
-      - name: Delete Resource Group
-        run: az group delete --name bicep-test-rg --yes --no-wait
