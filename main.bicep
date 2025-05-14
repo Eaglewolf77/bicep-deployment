@@ -23,7 +23,6 @@ resource vnet 'Microsoft.Network/virtualNetworks@2022-07-01' = {
 resource nsg 'Microsoft.Network/networkSecurityGroups@2022-07-01' = {
   name: 'bicep-test-nsg'
   location: location
-  properties: {}
 }
 
 resource allowSSH 'Microsoft.Network/networkSecurityGroups/securityRules@2022-07-01' = {
@@ -56,10 +55,12 @@ resource allowHTTP 'Microsoft.Network/networkSecurityGroups/securityRules@2022-0
   }
 }
 
+// ✅ FIX: Parent + hardcoded name to avoid BCP120
 resource subnetAssoc 'Microsoft.Network/virtualNetworks/subnets@2022-07-01' = {
-  name: '${vnet.name}/${vnet.properties.subnets[0].name}'
+  parent: vnet
+  name: 'bicep-test-subnet'
   properties: {
-    addressPrefix: vnet.properties.subnets[0].properties.addressPrefix
+    addressPrefix: '10.0.1.0/24'
     networkSecurityGroup: {
       id: nsg.id
     }
