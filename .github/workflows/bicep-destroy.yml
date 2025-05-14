@@ -1,0 +1,27 @@
+name: Bicep Destroy
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: none
+
+jobs:
+  destroy:
+    runs-on: ubuntu-latest
+    env:
+      AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+      AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+    steps:
+    - name: Azure CLI login (manual classic SP)
+      run: |
+        az login --service-principal \
+                 --username ${{ secrets.AZURE_CLIENT_ID }} \
+                 --password ${{ secrets.AZURE_CLIENT_SECRET }} \
+                 --tenant ${{ secrets.AZURE_TENANT_ID }}
+
+    - name: Delete Resource Group
+      run: az group delete --name bicep-test-rg --yes --no-wait
