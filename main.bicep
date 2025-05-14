@@ -1,6 +1,10 @@
 param location string = 'swedencentral'
 param sshPublicKey string
 
+resource rg 'Microsoft.Resources/resourceGroups@2021-04-01' existing = {
+  name: 'bicep-test-rg'
+}
+
 resource vnet 'Microsoft.Network/virtualNetworks@2022-07-01' = {
   name: 'bicep-test-vnet'
   location: location
@@ -22,7 +26,6 @@ resource vnet 'Microsoft.Network/virtualNetworks@2022-07-01' = {
 resource nsg 'Microsoft.Network/networkSecurityGroups@2022-07-01' = {
   name: 'bicep-test-nsg'
   location: location
-  properties: {}
 }
 
 resource allowSSH 'Microsoft.Network/networkSecurityGroups/securityRules@2022-07-01' = {
@@ -56,9 +59,9 @@ resource allowHTTP 'Microsoft.Network/networkSecurityGroups/securityRules@2022-0
 }
 
 resource subnetAssoc 'Microsoft.Network/virtualNetworks/subnets@2022-07-01' = {
-  name: '${vnet.name}/${vnet.properties.subnets[0].name}'
+  name: '${vnet.name}/bicep-test-subnet'
   properties: {
-    addressPrefix: vnet.properties.subnets[0].properties.addressPrefix
+    addressPrefix: '10.0.1.0/24'
     networkSecurityGroup: {
       id: nsg.id
     }
@@ -68,8 +71,11 @@ resource subnetAssoc 'Microsoft.Network/virtualNetworks/subnets@2022-07-01' = {
 resource jumpboxPip 'Microsoft.Network/publicIPAddresses@2022-07-01' = {
   name: 'bicep-jumpbox-ip'
   location: location
+  sku: {
+    name: 'Standard'
+  }
   properties: {
-    publicIPAllocationMethod: 'Dynamic'
+    publicIPAllocationMethod: 'Static'
   }
 }
 
@@ -104,8 +110,8 @@ resource jumpboxVm 'Microsoft.Compute/virtualMachines@2022-08-01' = {
     storageProfile: {
       imageReference: {
         publisher: 'Canonical'
-        offer: 'UbuntuServer'
-        sku: '22_04-lts'
+        offer: '0001-com-ubuntu-server-focal'
+        sku: '20_04-lts-gen2'
         version: 'latest'
       }
       osDisk: {
@@ -165,6 +171,11 @@ resource lb 'Microsoft.Network/loadBalancers@2022-07-01' = {
         }
       }
     ]
+    backendAddressPools: [
+      {
+        name: 'BackendPool'
+      }
+    ]
   }
 }
 
@@ -180,11 +191,6 @@ resource webNic 'Microsoft.Network/networkInterfaces@2022-07-01' = {
             id: vnet.properties.subnets[0].id
           }
           privateIPAllocationMethod: 'Dynamic'
-          loadBalancerBackendAddressPools: [
-            {
-              id: lb.properties.backendAddressPools[0].id
-            }
-          ]
         }
       }
     ]
@@ -201,8 +207,8 @@ resource webVm 'Microsoft.Compute/virtualMachines@2022-08-01' = {
     storageProfile: {
       imageReference: {
         publisher: 'Canonical'
-        offer: 'UbuntuServer'
-        sku: '22_04-lts'
+        offer: '0001-com-ubuntu-server-focal'
+        sku: '20_04-lts-gen2'
         version: 'latest'
       }
       osDisk: {
@@ -235,7 +241,7 @@ resource webVm 'Microsoft.Compute/virtualMachines@2022-08-01' = {
 }
 
 resource kv 'Microsoft.KeyVault/vaults@2022-07-01' = {
-  name: 'keyvault-kv-cloud23'
+  name: 'keyvault-bicep-cloud23'
   location: location
   properties: {
     tenantId: subscription().tenantId
