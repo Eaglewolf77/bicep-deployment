@@ -1,6 +1,10 @@
 param location string = 'swedencentral'
 param sshPublicKey string
-param adminUsername string = 'azureuser'
+param adminUsername string
+
+resource rg 'Microsoft.Resources/resourceGroups@2021-04-01' existing = {
+  name: 'bicep-test-rg'
+}
 
 resource vnet 'Microsoft.Network/virtualNetworks@2022-07-01' = {
   name: 'bicep-test-vnet'
@@ -23,6 +27,7 @@ resource vnet 'Microsoft.Network/virtualNetworks@2022-07-01' = {
 resource nsg 'Microsoft.Network/networkSecurityGroups@2022-07-01' = {
   name: 'bicep-test-nsg'
   location: location
+  properties: {}
 }
 
 resource allowSSH 'Microsoft.Network/networkSecurityGroups/securityRules@2022-07-01' = {
@@ -83,7 +88,7 @@ resource jumpboxNic 'Microsoft.Network/networkInterfaces@2022-07-01' = {
         name: 'ipconfig1'
         properties: {
           subnet: {
-            id: vnet.properties.subnets[0].id
+            id: subnetAssoc.id
           }
           privateIPAllocationMethod: 'Dynamic'
           publicIPAddress: {
@@ -178,12 +183,12 @@ resource webNic 'Microsoft.Network/networkInterfaces@2022-07-01' = {
         name: 'ipconfig1'
         properties: {
           subnet: {
-            id: vnet.properties.subnets[0].id
+            id: subnetAssoc.id
           }
           privateIPAllocationMethod: 'Dynamic'
           loadBalancerBackendAddressPools: [
             {
-              id: lb.properties.backendAddressPools[0].id
+              id: lb.id
             }
           ]
         }
@@ -235,7 +240,6 @@ resource webVm 'Microsoft.Compute/virtualMachines@2022-08-01' = {
   }
 }
 
-// === Key Vault & SSH Secret Block ===
 resource kv 'Microsoft.KeyVault/vaults@2022-07-01' = {
   name: 'keyvault-bicep-cloud23'
   location: location
@@ -248,16 +252,11 @@ resource kv 'Microsoft.KeyVault/vaults@2022-07-01' = {
   }
 }
 
-resource sshSecret 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
-  parent: kv
-  name: 'sshpublickey'
-  properties: {
-    value: sshPublicKey
-  }
-}
-
 resource automation 'Microsoft.Automation/automationAccounts@2022-08-08' = {
   name: 'bicep-automation'
   location: location
   properties: {}
+  sku: {
+    name: 'Basic'
+  }
 }
