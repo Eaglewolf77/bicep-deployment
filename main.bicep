@@ -1,7 +1,11 @@
 param location string = 'swedencentral'
 param sshPublicKey string
-param adminUsername string
-param spObjectId string
+param adminUsername string = 'azureuser'
+
+resource rg 'Microsoft.Resources/resourceGroups@2021-04-01' = {
+  name: 'bicep-test-rg'
+  location: location
+}
 
 resource vnet 'Microsoft.Network/virtualNetworks@2022-07-01' = {
   name: 'bicep-test-vnet'
@@ -56,10 +60,12 @@ resource allowHTTP 'Microsoft.Network/networkSecurityGroups/securityRules@2022-0
   }
 }
 
+// Direct subnet NSG association
 resource subnetAssoc 'Microsoft.Network/virtualNetworks/subnets@2022-07-01' = {
-  name: '${vnet.name}/${vnet.properties.subnets[0].name}'
+  parent: vnet
+  name: 'bicep-test-subnet'
   properties: {
-    addressPrefix: vnet.properties.subnets[0].properties.addressPrefix
+    addressPrefix: '10.0.1.0/24'
     networkSecurityGroup: {
       id: nsg.id
     }
@@ -228,30 +234,4 @@ resource webVm 'Microsoft.Compute/virtualMachines@2022-08-01' = {
       ]
     }
   }
-}
-
-resource kv 'Microsoft.KeyVault/vaults@2022-07-01' = {
-  name: 'keyvault-bicep-cloud23'
-  location: location
-  properties: {
-    tenantId: subscription().tenantId
-    accessPolicies: [
-      {
-        tenantId: subscription().tenantId
-        objectId: spObjectId
-        permissions: {
-          secrets: [
-            'Get'
-            'List'
-            'Set'
-          ]
-        }
-      }
-    ]
-  }
-}
-
-resource automation 'Microsoft.Automation/automationAccounts@2022-08-08' = {
-  name: 'bicep-automation'
-  location: location
 }
