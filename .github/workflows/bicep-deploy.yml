@@ -1,4 +1,4 @@
-name: Bicep Deploy
+name: Bicep Deploy (Final v15)
 
 on:
   workflow_dispatch:
@@ -16,35 +16,36 @@ jobs:
       AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       SP_OBJECT_ID: ${{ secrets.SP_OBJECT_ID }}
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Azure CLI login (classic SP)
-      run: |
-        az login --service-principal \
-                 --username ${{ secrets.AZURE_CLIENT_ID }} \
-                 --password ${{ secrets.AZURE_CLIENT_SECRET }} \
-                 --tenant ${{ secrets.AZURE_TENANT_ID }}
+      - name: Azure Login (classic SP)
+        run: |
+          az login --service-principal \
+                   --username $AZURE_CLIENT_ID \
+                   --password $AZURE_CLIENT_SECRET \
+                   --tenant $AZURE_TENANT_ID
 
-    - name: Create Resource Group (safe)
-      run: |
-        az group create --name bicep-test-rg --location swedencentral
+      - name: Create Resource Group if not exists
+        run: |
+          az group create --name bicep-test-rg --location swedencentral
 
-    - name: Start Timer
-      run: echo "START_TIME=$(date +%s)" >> $GITHUB_ENV
+      - name: Set SSH key from GitHub Secret
+        run: echo "SSH_KEY=${{ secrets.SSH_PUBLIC_KEY }}" >> $GITHUB_ENV
 
-    - name: Get SSH key from Key Vault
-      run: |
-        SSH_KEY=$(az keyvault secret show --name sshpublickey --vault-name keyvault-bicep-cloud23 --query value -o tsv)
-        echo "SSH_KEY=$SSH_KEY" >> $GITHUB_ENV
+      - name: Start Timer
+        run: echo "START_TIME=$(date +%s)" >> $GITHUB_ENV
 
-    - name: Deploy Bicep
-      run: |
-        az deployment group create \
-          --resource-group bicep-test-rg \
-          --template-file main.bicep \
-          --parameters sshPublicKey="$SSH_KEY" adminUsername="azureuser" spObjectId="$SP_OBJECT_ID"
+      - name: Deploy Bicep template
+        run: |
+          az deployment group create \
+            --resource-group bicep-test-rg \
+            --template-file main.bicep \
+            --parameters sshPublicKey="$SSH_KEY" \
+                         adminUsername="azureuser" \
+                         spObjectId="$SP_OBJECT_ID"
 
-    - name: End Timer
-      run: |
-        END_TIME=$(date +%s)
-        echo "✅ Bicep deploy took $((END_TIME - START_TIME)) seconds"
+      - name: End Timer & Report
+        run: |
+          END_TIME=$(date +%s)
+          DURATION=$((END_TIME - START_TIME))
+          echo "✅ Bicep deployment took $DURATION seconds"
