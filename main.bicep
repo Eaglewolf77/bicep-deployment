@@ -24,7 +24,6 @@ resource vnet 'Microsoft.Network/virtualNetworks@2022-07-01' = {
 resource nsg 'Microsoft.Network/networkSecurityGroups@2022-07-01' = {
   name: 'bicep-test-nsg'
   location: location
-  properties: {}
 }
 
 resource allowSSH 'Microsoft.Network/networkSecurityGroups/securityRules@2022-07-01' = {
@@ -58,10 +57,9 @@ resource allowHTTP 'Microsoft.Network/networkSecurityGroups/securityRules@2022-0
 }
 
 resource subnetAssoc 'Microsoft.Network/virtualNetworks/subnets@2022-07-01' = {
-  parent: vnet
-  name: 'bicep-test-subnet'
+  name: '${vnet.name}/${vnet.properties.subnets[0].name}'
   properties: {
-    addressPrefix: '10.0.1.0/24'
+    addressPrefix: vnet.properties.subnets[0].properties.addressPrefix
     networkSecurityGroup: {
       id: nsg.id
     }
@@ -107,7 +105,7 @@ resource jumpboxVm 'Microsoft.Compute/virtualMachines@2022-08-01' = {
     storageProfile: {
       imageReference: {
         publisher: 'Canonical'
-        offer: 'UbuntuServer'
+        offer: '0001-com-ubuntu-server-focal'
         sku: '20_04-lts'
         version: 'latest'
       }
@@ -183,7 +181,6 @@ resource webNic 'Microsoft.Network/networkInterfaces@2022-07-01' = {
             id: vnet.properties.subnets[0].id
           }
           privateIPAllocationMethod: 'Dynamic'
-          loadBalancerBackendAddressPools: []
         }
       }
     ]
@@ -200,7 +197,7 @@ resource webVm 'Microsoft.Compute/virtualMachines@2022-08-01' = {
     storageProfile: {
       imageReference: {
         publisher: 'Canonical'
-        offer: 'UbuntuServer'
+        offer: '0001-com-ubuntu-server-focal'
         sku: '20_04-lts'
         version: 'latest'
       }
@@ -238,20 +235,15 @@ resource kv 'Microsoft.KeyVault/vaults@2022-07-01' = {
   location: location
   properties: {
     tenantId: subscription().tenantId
-    sku: {
-      family: 'A'
-      name: 'standard'
-    }
     accessPolicies: [
       {
         tenantId: subscription().tenantId
         objectId: spObjectId
         permissions: {
           secrets: [
-            'get'
-            'list'
-            'set'
-            'delete'
+            'Get'
+            'List'
+            'Set'
           ]
         }
       }
@@ -262,7 +254,4 @@ resource kv 'Microsoft.KeyVault/vaults@2022-07-01' = {
 resource automation 'Microsoft.Automation/automationAccounts@2022-08-08' = {
   name: 'bicep-automation'
   location: location
-  sku: {
-    name: 'Basic'
-  }
 }
