@@ -1,6 +1,10 @@
 param location string = 'swedencentral'
 param sshPublicKey string
-param adminUsername string
+param spObjectId string
+
+resource rg 'Microsoft.Resources/resourceGroups@2022-09-01' existing = {
+  name: 'bicep-test-rg'
+}
 
 resource vnet 'Microsoft.Network/virtualNetworks@2022-07-01' = {
   name: 'bicep-test-vnet'
@@ -23,6 +27,7 @@ resource vnet 'Microsoft.Network/virtualNetworks@2022-07-01' = {
 resource nsg 'Microsoft.Network/networkSecurityGroups@2022-07-01' = {
   name: 'bicep-test-nsg'
   location: location
+  properties: {}
 }
 
 resource allowSSH 'Microsoft.Network/networkSecurityGroups/securityRules@2022-07-01' = {
@@ -56,7 +61,8 @@ resource allowHTTP 'Microsoft.Network/networkSecurityGroups/securityRules@2022-0
 }
 
 resource subnetAssoc 'Microsoft.Network/virtualNetworks/subnets@2022-07-01' = {
-  name: '${vnet.name}/bicep-test-subnet'
+  name: 'bicep-test-subnet'
+  parent: vnet
   properties: {
     addressPrefix: '10.0.1.0/24'
     networkSecurityGroup: {
@@ -82,7 +88,7 @@ resource jumpboxNic 'Microsoft.Network/networkInterfaces@2022-07-01' = {
         name: 'ipconfig1'
         properties: {
           subnet: {
-            id: vnet.properties.subnets[0].id
+            id: subnetAssoc.id
           }
           privateIPAllocationMethod: 'Dynamic'
           publicIPAddress: {
@@ -114,13 +120,13 @@ resource jumpboxVm 'Microsoft.Compute/virtualMachines@2022-08-01' = {
     }
     osProfile: {
       computerName: 'bicep-jumpbox'
-      adminUsername: adminUsername
+      adminUsername: 'azureuser'
       linuxConfiguration: {
         disablePasswordAuthentication: true
         ssh: {
           publicKeys: [
             {
-              path: '/home/${adminUsername}/.ssh/authorized_keys'
+              path: '/home/azureuser/.ssh/authorized_keys'
               keyData: sshPublicKey
             }
           ]
@@ -182,7 +188,7 @@ resource webNic 'Microsoft.Network/networkInterfaces@2022-07-01' = {
         name: 'ipconfig1'
         properties: {
           subnet: {
-            id: vnet.properties.subnets[0].id
+            id: subnetAssoc.id
           }
           privateIPAllocationMethod: 'Dynamic'
           loadBalancerBackendAddressPools: [
@@ -216,13 +222,13 @@ resource webVm 'Microsoft.Compute/virtualMachines@2022-08-01' = {
     }
     osProfile: {
       computerName: 'bicep-webserver'
-      adminUsername: adminUsername
+      adminUsername: 'azureuser'
       linuxConfiguration: {
         disablePasswordAuthentication: true
         ssh: {
           publicKeys: [
             {
-              path: '/home/${adminUsername}/.ssh/authorized_keys'
+              path: '/home/azureuser/.ssh/authorized_keys'
               keyData: sshPublicKey
             }
           ]
@@ -248,13 +254,31 @@ resource kv 'Microsoft.KeyVault/vaults@2022-07-01' = {
       family: 'A'
       name: 'standard'
     }
+    accessPolicies: [
+      {
+        tenantId: subscription().tenantId
+        objectId: spObjectId
+        permissions: {
+          secrets: [
+            'get'
+            'set'
+            'list'
+          ]
+        }
+      }
+    ]
   }
 }
 
 resource automation 'Microsoft.Automation/automationAccounts@2022-08-08' = {
   name: 'bicep-automation'
   location: location
-  properties: {}
+  identity: {
+    type: 'SystemAssigned'
+  }
+  properties: {
+    publicNetworkAccess: 'Enabled'
+  }
   sku: {
     name: 'Basic'
   }
