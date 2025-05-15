@@ -3,6 +3,10 @@ param sshPublicKey string
 param adminUsername string
 param spObjectId string
 
+resource rg 'Microsoft.Resources/resourceGroups@2022-09-01' existing = {
+  name: 'bicep-test-rg'
+}
+
 resource vnet 'Microsoft.Network/virtualNetworks@2022-07-01' = {
   name: 'bicep-test-vnet'
   location: location
@@ -84,7 +88,7 @@ resource jumpboxNic 'Microsoft.Network/networkInterfaces@2022-07-01' = {
         name: 'ipconfig1'
         properties: {
           subnet: {
-            id: vnet.properties.subnets[0].id
+            id: subnetAssoc.id
           }
           privateIPAllocationMethod: 'Dynamic'
           publicIPAddress: {
@@ -179,9 +183,14 @@ resource webNic 'Microsoft.Network/networkInterfaces@2022-07-01' = {
         name: 'ipconfig1'
         properties: {
           subnet: {
-            id: vnet.properties.subnets[0].id
+            id: subnetAssoc.id
           }
           privateIPAllocationMethod: 'Dynamic'
+          loadBalancerBackendAddressPools: [
+            {
+              id: lb.id
+            }
+          ]
         }
       }
     ]
@@ -247,22 +256,19 @@ resource kv 'Microsoft.KeyVault/vaults@2022-07-01' = {
             'set'
             'delete'
             'recover'
-            'backup'
-            'restore'
           ]
         }
       }
     ]
-    sku: {
-      family: 'A'
-      name: 'standard'
-    }
-    publicNetworkAccess: true
+    enableSoftDelete: true
+    publicNetworkAccess: 'Enabled'
   }
 }
 
 resource automation 'Microsoft.Automation/automationAccounts@2022-08-08' = {
   name: 'bicep-automation'
   location: location
-  properties: {}
+  sku: {
+    name: 'Basic'
+  }
 }
