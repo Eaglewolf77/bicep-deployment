@@ -3,10 +3,6 @@ param sshPublicKey string
 param adminUsername string
 param spObjectId string
 
-resource rg 'Microsoft.Resources/resourceGroups@2022-09-01' existing = {
-  name: 'bicep-test-rg'
-}
-
 resource vnet 'Microsoft.Network/virtualNetworks@2022-07-01' = {
   name: 'bicep-test-vnet'
   location: location
@@ -28,6 +24,7 @@ resource vnet 'Microsoft.Network/virtualNetworks@2022-07-01' = {
 resource nsg 'Microsoft.Network/networkSecurityGroups@2022-07-01' = {
   name: 'bicep-test-nsg'
   location: location
+  properties: {}
 }
 
 resource allowSSH 'Microsoft.Network/networkSecurityGroups/securityRules@2022-07-01' = {
@@ -88,7 +85,7 @@ resource jumpboxNic 'Microsoft.Network/networkInterfaces@2022-07-01' = {
         name: 'ipconfig1'
         properties: {
           subnet: {
-            id: subnetAssoc.id
+            id: vnet.properties.subnets[0].id
           }
           privateIPAllocationMethod: 'Dynamic'
           publicIPAddress: {
@@ -110,7 +107,7 @@ resource jumpboxVm 'Microsoft.Compute/virtualMachines@2022-08-01' = {
     storageProfile: {
       imageReference: {
         publisher: 'Canonical'
-        offer: '0001-com-ubuntu-server-focal'
+        offer: 'UbuntuServer'
         sku: '20_04-lts'
         version: 'latest'
       }
@@ -183,14 +180,10 @@ resource webNic 'Microsoft.Network/networkInterfaces@2022-07-01' = {
         name: 'ipconfig1'
         properties: {
           subnet: {
-            id: subnetAssoc.id
+            id: vnet.properties.subnets[0].id
           }
           privateIPAllocationMethod: 'Dynamic'
-          loadBalancerBackendAddressPools: [
-            {
-              id: lb.id
-            }
-          ]
+          loadBalancerBackendAddressPools: []
         }
       }
     ]
@@ -207,7 +200,7 @@ resource webVm 'Microsoft.Compute/virtualMachines@2022-08-01' = {
     storageProfile: {
       imageReference: {
         publisher: 'Canonical'
-        offer: '0001-com-ubuntu-server-focal'
+        offer: 'UbuntuServer'
         sku: '20_04-lts'
         version: 'latest'
       }
@@ -245,6 +238,10 @@ resource kv 'Microsoft.KeyVault/vaults@2022-07-01' = {
   location: location
   properties: {
     tenantId: subscription().tenantId
+    sku: {
+      family: 'A'
+      name: 'standard'
+    }
     accessPolicies: [
       {
         tenantId: subscription().tenantId
@@ -255,13 +252,10 @@ resource kv 'Microsoft.KeyVault/vaults@2022-07-01' = {
             'list'
             'set'
             'delete'
-            'recover'
           ]
         }
       }
     ]
-    enableSoftDelete: true
-    publicNetworkAccess: 'Enabled'
   }
 }
 
