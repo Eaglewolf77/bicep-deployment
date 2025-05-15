@@ -2,11 +2,6 @@ param location string = 'swedencentral'
 param sshPublicKey string
 param adminUsername string = 'azureuser'
 
-resource rg 'Microsoft.Resources/resourceGroups@2021-04-01' = {
-  name: 'bicep-test-rg'
-  location: location
-}
-
 resource vnet 'Microsoft.Network/virtualNetworks@2022-07-01' = {
   name: 'bicep-test-vnet'
   location: location
@@ -60,7 +55,6 @@ resource allowHTTP 'Microsoft.Network/networkSecurityGroups/securityRules@2022-0
   }
 }
 
-// Direct subnet NSG association
 resource subnetAssoc 'Microsoft.Network/virtualNetworks/subnets@2022-07-01' = {
   parent: vnet
   name: 'bicep-test-subnet'
