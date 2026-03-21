@@ -70,6 +70,7 @@ az deployment group create \
   --resource-group <resource-group-name> \
   --template-file main.bicep
 ```
+
 ## Technologies
 
 - Bicep
