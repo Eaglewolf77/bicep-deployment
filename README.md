@@ -71,6 +71,8 @@ az deployment group create \
   --template-file main.bicep
 ```
 
+---
+
 ## Technologies
 
 - Bicep
@@ -81,4 +83,5 @@ az deployment group create \
 - Azure Key Vault
 
 ## License
+
 MIT License – see LICENSE file.
