@@ -1,37 +1,82 @@
-# Bicep Deployment – Examensarbete
+# Cloud Infrastructure Automation (Bicep)
 
-Detta repository innehåller Bicep-mallar för att automatiskt skapa en testmiljö i Microsoft Azure som en del av examensarbetet: **"Jämförelse av Bicep och Terraform för småföretag i Azure"**.
+This repository contains Bicep configurations used to deploy a complete Azure environment using Infrastructure as Code (IaC) and automated CI/CD pipelines in GitHub Actions.
 
-## Syfte
-Syftet är att med hjälp av Infrastructure as Code (IaC) skapa och jämföra två identiska infrastrukturer där Bicep används i detta repository.
+This project is part of a comparison between Bicep and Terraform, focusing on performance, workflow efficiency, and infrastructure lifecycle management.
 
-## Infrastruktur
-Följande resurser provisioneras:
+The equivalent Terraform implementation can be found here:  
+https://github.com/Eaglewolf77/terraform-deployment
+
+---
+
+## Architecture
+
+The following resources are provisioned in Azure:
+
 - Resource Group
-- Virtual Network + Subnets
-- Jumpbox Linux VM
-- Web Frontend Linux VM
+- Virtual Network with subnets
+- Linux Jumpbox VM
+- Linux Web Frontend VM
 - Azure Load Balancer
 - Azure Key Vault
 - Azure Automation Account
 - Network Security Groups (NSG)
 
-## Förutsättningar
+---
+
+## CI/CD & Automation
+
+- Fully automated deployments using GitHub Actions
+- Infrastructure lifecycle managed via:
+  - `az deployment group create`
+  - `az deployment group delete`
+- Secure authentication using Azure Service Principal
+- Secrets managed in Azure Key Vault
+
+---
+
+## Benchmarking Approach
+
+- Performed multiple deployment and teardown cycles (10 runs)
+- Used identical infrastructure for Bicep and Terraform
+- Extracted execution timing from GitHub Actions using GitHub CLI (`gh`)
+- Compared performance and workflow efficiency across IaC tools
+
+---
+
+## Benchmark Results
+
+Results are available in the workflow logs:  
+https://github.com/Eaglewolf77/bicep-deployment/actions
+---
+
+## Prerequisites
+
 - Azure Subscription
-- Service Principal (med Contributor role)
-- GitHub Actions Secrets:
+- Service Principal with Contributor role
+- GitHub Actions secrets:
   - `AZURE_CLIENT_ID`
   - `AZURE_CLIENT_SECRET`
   - `AZURE_SUBSCRIPTION_ID`
   - `AZURE_TENANT_ID`
 
-## Användning
-1. Forka eller klona repo:t
-2. Sätt dina GitHub Secrets
-3. Pusha till `main` → deployment körs automatiskt via GitHub Actions
+---
 
-## Examensarbete
-Detta repository är en del av mitt examensarbete inom Cloud & IT-Infrastructure Engineer-programmet och används för att jämföra Bicep med Terraform i en verklig Azure-miljö.
+## Usage
+
+```bash
+az deployment group create \
+  --resource-group <resource-group-name> \
+  --template-file main.bicep
+```
+## Technologies
+
+Bicep
+Microsoft Azure
+GitHub Actions
+GitHub CLI (gh)
+Azure CLI (az)
+Azure Key Vault
 
 ## Licens
-MIT License – se LICENSE-filen.
+MIT License – see LICENSE file.
