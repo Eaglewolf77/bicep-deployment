@@ -44,7 +44,6 @@ The following resources are provisioned in Azure:
 
 ---
 
----
 ## Benchmark Results
 
 Results are available in the workflow logs:  
