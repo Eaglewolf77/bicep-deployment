@@ -44,10 +44,12 @@ The following resources are provisioned in Azure:
 
 ---
 
+---
 ## Benchmark Results
 
 Results are available in the workflow logs:  
 https://github.com/Eaglewolf77/bicep-deployment/actions
+
 ---
 
 ## Prerequisites
