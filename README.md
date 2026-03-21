@@ -78,5 +78,5 @@ GitHub CLI (gh)
 Azure CLI (az)
 Azure Key Vault
 
-## Licens
+## License
 MIT License – see LICENSE file.
