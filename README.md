@@ -71,12 +71,12 @@ az deployment group create \
 ```
 ## Technologies
 
-Bicep
-Microsoft Azure
-GitHub Actions
-GitHub CLI (gh)
-Azure CLI (az)
-Azure Key Vault
+- Bicep
+- Microsoft Azure
+- GitHub Actions
+- GitHub CLI (`gh`)
+- Azure CLI (`az`)
+- Azure Key Vault
 
 ## License
 MIT License – see LICENSE file.
